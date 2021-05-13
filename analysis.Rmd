@@ -49,13 +49,14 @@ This page details the analysis performed for 'untitled Heliconius exploration
 project'. I walk through all the data preparation steps and models here and
 explain my reasoning for analysis decisions. If you are only interested in the
 model outputs you can go straight to the [Models](#models) section. The code to
-reproduce this analysis are in the
-[analysis.Rmd](https://github.com/wyatt-toure/heliconius-exploration/blob/main/analysis.Rmd)
+reproduce this analysis are embedded within the code to generate this page which
+is in the
+[`analysis.Rmd`](https://github.com/wyatt-toure/heliconius-exploration/blob/main/analysis.Rmd)
 file. The data underlying this analysis are available in the
 [`/data`](https://github.com/wyatt-toure/heliconius-exploration/blob/main/data)
 directory. Instructions on how to run the analyses as well as metadata for the
 variables can be found in
-[README.md](https://github.com/wyatt-toure/guppy-colour-learning-project#how-to-reproduce-the-results).
+[README.md](https://github.com/wyatt-toure/heliconius-exploration#how-to-reproduce-the-results).
 
 ***
 
