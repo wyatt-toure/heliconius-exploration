@@ -8,7 +8,7 @@ UNTITLED’</span>.
 
 A reader-friendly website which walks through each of the models in the
 manuscript is available at
-<https://wyatt-toure.github.io/heliconius-exploration>.
+<https://wyatt-toure.github.io/heliconius-exploration/analysis.html>.
 
 ## How to reproduce the results
 
