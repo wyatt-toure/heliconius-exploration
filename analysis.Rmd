@@ -492,7 +492,7 @@ ggplot(exploration_model3_emmeans_data,
     theme_cowplot() +
     geom_jitter(data = plot_data,
                 aes(x = favourite.colour, 
-                    y = (plot_data$n.familiar.colour/(plot_data$n.novel.colour + plot_data$n.familiar.colour)),
+                    y = (plot_data$n.novel.colour/(plot_data$n.novel.colour + plot_data$n.familiar.colour)),
                     color = familiar.colour),
                 width = 0.05,
                 alpha = 0.2
@@ -513,7 +513,7 @@ ggplot(exploration_model3_emmeans_data,
     axis.text = element_text(size = 12),
     axis.title = element_text(size = 14, face = "bold")
   ) +
-  ylab("Familiar colour choice proportion")
+  ylab("Novel colour choice proportion")
 ```
 
 ```{r fig.width=10, echo=FALSE, fig.cap="This plot separates by session rewarding colour. Data are means ± SE"}
@@ -540,7 +540,7 @@ ggplot(exploration_model3_emmeans_data,
     theme_cowplot() +
     geom_jitter(data = plot_data,
                 aes(x = favourite.colour, 
-                    y = (plot_data$n.familiar.colour/(plot_data$n.novel.colour + plot_data$n.familiar.colour)),
+                    y = (plot_data$n.novel.colour/(plot_data$n.novel.colour + plot_data$n.familiar.colour)),
                     color = familiar.colour),
                 width = 0.05,
                 alpha = 0.2
@@ -563,7 +563,7 @@ ggplot(exploration_model3_emmeans_data,
   ) +
   facet_wrap(~session.reward.colour) +
   geom_hline(yintercept = 0.5, linetype = "dashed", alpha = 0.5) +
-  ylab("Familiar colour choice proportion")
+  ylab("Novel colour choice proportion")
 ```
 
 
