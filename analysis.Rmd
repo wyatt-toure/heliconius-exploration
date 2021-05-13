@@ -51,6 +51,7 @@ training.
 
 ```{r flexibility-plot, echo=FALSE, warning=FALSE, fig.width=10, fig.cap="The proportion of correct choice an individual made during the morning and the afternoon throughout all of training. Lines connect individual acoss time periods. "}
 learning_data <- read.csv("data/heliconiini-learning-data.csv")
+
 ggplot(learning_data, aes(
   x = time.of.day,
   y = (n.correct.training / (n.correct.training + n.incorrect.training))
@@ -65,13 +66,12 @@ ggplot(learning_data, aes(
     axis.text = element_text(size = 12),
     axis.title = element_text(size = 14, face = "bold")
   )
-  
 ```
 
 Some of these lines have steeper slopes than others. Since the correct choice in
 the morning is incorrect in the afternoon, this means that steep slopes indicate
 individuals who stuck with their 'favourite' colour (stubborn). The less steep
-the slope, the more flexible and individual was. I was interested in whether
+the slope, the more flexible an individual was. I was interested in whether
 these steep sloped individuals were generally less exploratory/flexible than
 their comparatively less stubborn counterparts.
 
