@@ -49,8 +49,45 @@ Data are available in the
 [`data/`](https://github.com/wyatt-toure/heliconius-exploration/blob/main/data/)
 directory.
 
-Below I provide the variable descriptions for the dataset and the [packages
-required](#required-tools-and-references) to conduct the analyses and construct
-the website as well as their versions and citations.
+Below I provide the variable descriptions for the datasets. 
+
+### Exploration data set
+
+Data: [heliconius-exploration-data-raw.csv](https://github.com/wyatt-toure/heliconius-exploration/blob/main/data/heliconius-exploration-data-raw.csv)
+
+| Variable | Description                                        |
+|----------|----------------------------------------------------|
+| id       | The individual ID of a butterfly                   |
+| choice   | The colour choice a butterfly made                 |
+| combo    | The pair of colours present during an assay        |
+| cage     | The identity of the cage a butterfly was tested in |
+
+### Learning data set 
+
+Data: [heliconiini-learning-data.csv](https://github.com/wyatt-toure/heliconius-exploration/blob/main/data/heliconiini-learning-data.csv)
+
+| Variable                    | Description                                                                                                                   |
+|-----------------------------|-------------------------------------------------------------------------------------------------------------------------------|
+| id                          | The individual ID of a butterfly                                                                                              |
+| sex                         | The sex of the butterfly                                                                                                      |
+| cage                        | The identity of the cage the butterfly was trained and tested in                                                              |
+| time.of.day                 | The time session a trial occurred, 1morning was 8AM to 10AM 2afternoon was 3PM to 5PM                                         |
+| n.correct.training          | The number of correct choices made throughout all of training                                                                 |
+| n.incorrect.training        | The number of incorrect choices made throughout all of training                                                               |
+| session.reward.colour       | The colour that was rewarding (or would have been rewarding if the trial is unreinforced) during that time period             |
+| n.morning.colour.test       | The number of choices made for the colour rewarding in the morning during the final test                                      |
+| n.afternoon.colour.test     | The number of choices made for the colour rewarding in the afternoon during the final test                                    |
+| final.presentation          | The order in which the final test trials were performed, normal (morning then afternoon) or reversed (afternoon then morning) |
+| n.morning.colour.initial    | The number of choices made for the colour rewarding in the morning during the initial test                                    |
+| n.afternoon.colour.initial  | The number of choices made for the colour rewarding in the afternoon during the initial test                                  |
+| species                     | The species of the individual                                                                                                 |
+| n.morning.colour.training   | The number of choices made for the colour rewarding in the morning during training                                            |
+| n.afternoon.colour.training | The number of choices made for the colour rewarding in the afternoon during training                                          |
+| colour.training.scheme      | The identity of the rewarding colours based on time of day                                                                    |
+
+## Packages required 
+
+The packages required to conduct the analyses and construct the website as well
+as their versions and citations are listed below.
 
 COMING SOON
