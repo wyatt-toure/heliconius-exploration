@@ -1,0 +1,20 @@
+---
+title: Does persistent colour preference constrain behavioural flexibility in Heliconius butterflies?
+output:
+  bookdown::html_document2:
+    includes:
+      in_header: docs/header.html
+    number_sections: false
+    split_by: section
+    css: styles.css
+
+knit: (function(input, ...) {
+    rmarkdown::render(
+      input,
+      output_file = 'docs/index')
+  })
+---
+
+***
+
+Project site summary placeholder.

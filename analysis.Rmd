@@ -1,0 +1,614 @@
+---
+title: Heliconius exploration analysis
+author: M. Wyatt Toure
+date: "Last update on `r format(Sys.Date(), '%b %d %Y')`"
+output:
+  bookdown::html_document2:
+    includes:
+      in_header: docs/header.html
+      after_body: docs/footer.html      
+    toc: true
+    toc_depth: 4
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    number_sections: false
+    split_by: section
+    css: styles.css
+
+knit: (function(input, ...) {
+    rmarkdown::render(
+      input,
+      output_file = 'docs/analysis')
+  })
+---
+
+```{r library-prep, include=FALSE}
+library(dplyr)
+library(tidyr)
+library(knitr)
+library(ggplot2)
+library(cowplot)
+library(lme4)
+library(lmerTest)
+library(effects)
+library(emmeans)
+library(ggpubr)
+library(rptR)
+source("R/tidy-exploration-data.R")
+source("R/tidy-learning-data.R")
+```
+
+*** 
+
+## Brief Overview
+
+One of the things I noticed while I was doing an experiment on Heliconiini
+time-based learning was that some individuals did not switch colours very much
+between time sessions, even though the flower was actively punished. This can be
+seen below where I plot the proportion of correct choices made during all of
+training.
+
+```{r flexibility-plot, echo=FALSE, warning=FALSE, fig.width=10, fig.cap="The proportion of correct choice an individual made during the morning and the afternoon throughout all of training. Lines connect individual acoss time periods. "}
+learning_data <- read.csv("data/heliconiini-learning-data.csv")
+ggplot(learning_data, aes(
+  x = time.of.day,
+  y = (n.correct.training / (n.correct.training + n.incorrect.training))
+)) +
+  theme_cowplot() +
+  geom_point(color = "#444444") +
+  geom_line(aes(group = id), color = "#bab0ac", alpha = 0.8) +
+  ylab("Proportion correct training") +
+  xlab("Time of day") +
+  theme(
+    legend.position = "none",
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 14, face = "bold")
+  )
+  
+```
+
+Some of these lines have steeper slopes than others. Since the correct choice in
+the morning is incorrect in the afternoon, this means that steep slopes indicate
+individuals who stuck with their 'favourite' colour (stubborn). The less steep
+the slope, the more flexible and individual was. I was interested in whether
+these steep sloped individuals were generally less exploratory/flexible than
+their comparatively less stubborn counterparts.
+
+For this experiment we wanted to understand the following:
+
+1.  Are stubborn (steep sloped) individuals less likely to sample a novel
+    colour ([Model 1](#model-1))?
+2.  Does the stubborn group remain stubborn during exploration trials? Do they
+    always stick with their favourite colour ([Model 3](#model-3))?
+
+To get at this I gave butterflies exploration trials where familiar colours
+(yellow or purple) were paired with novel colours which the butterflies had
+never seen before.
+
+The code to reproduce this analysis are in the [analysis.Rmd](https://github.com/wyatt-toure/heliconius-exploration/blob/main/analysis.Rmd) file. 
+The data underlying this analysis are available in the [`/data`](https://github.com/wyatt-toure/heliconius-exploration/blob/main/data) directory.
+Instructions on how to run the analyses as well as metadata for the variables can 
+be found in [README.md](https://github.com/wyatt-toure/guppy-colour-learning-project#how-to-reproduce-the-results).
+
+***
+
+## Data preparation 
+
+### Exploration assay data
+
+The raw data for the exploration experiment are in the form of individual
+choices associated with an individual ID as well as the cage identity and the
+two colours present in the assay. 
+
+```{r data-prep}
+## Read in data
+exploration_data <- read.csv("data/heliconius-exploration-data-raw.csv")
+
+## ID to factor
+exploration_data$id <- as.factor(exploration_data$id)
+```
+
+#### Standardise combination names 
+
+Here I standardise the levels of the variable `combo` so that the colour
+combinations are all in the same order with the familiar colour first and the
+novel colour second.
+
+```{r data-prep2}
+## Renaming factor levels
+## Old name is on the left, new name is on the right
+exploration_data$combo <- recode_factor(exploration_data$combo,
+                                                    "blue-purple" = 'purple-blue',
+                                                    "blue-yellow" = 'yellow-blue',
+                                                    "dblue-purple" = 'purple-blue',
+                                                   "lblue-yellow" = 'yellow-lblue',
+                                                    "orange-purple" = 'purple-orange',
+                                                    "pink-purple" = 'purple-pink',
+                                                    "pink-yellow" = 'yellow-pink',
+                                                    "red-purple" = 'purple-red',
+                                                   "red-yellow" = 'yellow-red'
+                                                   )
+```
+
+#### Summarise raw counts
+
+I tabulated the raw data into their totals using a custom function
+`summarise_exploration_data()`. You can see the code for this function [here]().
+
+```{r data-prep3}
+## Applying summarise exploration data function
+exploration_data_summarised <- summarise_exploration_data(exploration_data)
+```
+
+#### Assign time of day and rewarding colours
+
+Next I needed to assign the time of day for the trials as well as their original
+session rewarding colours from the learning experment. This was done with a
+series of cage-specific `case_when()` and `mutate()` statements. This section is
+quite long so I have folded the code, you can click the show code tab to see the
+code.
+
+```{r data-prep4}
+# Assigning time of day to assays
+exploration_data_summarised <- exploration_data_summarised %>% 
+  mutate(
+    time.of.day = case_when(
+      combo == "yellow-blue" & cage == "1A" ~ "1morning",
+      combo == "yellow-lblue" & cage == "1A" ~ "1morning",
+      combo == "purple-red" & cage == "1A" ~ "2afternoon",
+      combo == "purple-pink" & cage == "1A" ~ "2afternoon",
+      
+      combo == "purple-blue" & cage == "2A" ~ "1morning",
+      combo == "yellow-lblue" & cage == "2A" ~ "1morning",
+      combo == "yellow-red" & cage == "2A" ~ "2afternoon",
+      combo == "purple-orange" & cage == "2A" ~ "2afternoon",
+      
+      combo == "yellow-blue" & cage == "2B" ~ "1morning",
+      combo == "purple-orange" & cage == "2B" ~ "1morning",
+      combo == "purple-red" & cage == "2B" ~ "2afternoon",
+      combo == "yellow-pink" & cage == "2B" ~ "2afternoon",
+      
+      combo == "yellow-lblue" & cage == "3A" ~ "1morning",
+      combo == "purple-blue" & cage == "3A" ~ "2afternoon",
+      
+      combo == "yellow-orange" & cage == "1B" ~ "1morning",
+      combo == "purple-red" & cage == "1B" ~ "1morning",
+      combo == "purple-pink" & cage == "1B" ~ "2afternoon",
+      combo == "yellow-blue" & cage == "1B" ~ "2afternoon",
+      
+      combo == "yellow-blue" & cage == "3B" ~ "1morning",
+      combo == "purple-pink" & cage == "3B" ~ "1morning",
+      combo == "purple-red" & cage == "3B" ~ "2afternoon",
+      combo == "yellow-orange" & cage == "3B" ~ "2afternoon"
+    )
+  )
+
+# Assigning original rewarding colours for the time period based on the cage
+exploration_data_summarised <- exploration_data_summarised %>% 
+  mutate(
+    session.reward.colour =
+      case_when(
+        cage == "1A" & time.of.day == "1morning" ~ "yellow",
+        cage == "1A" & time.of.day == "2afternoon" ~ "purple",
+        
+        cage == "2A" & time.of.day == "1morning" ~ "purple",
+        cage == "2A" & time.of.day == "2afternoon" ~ "yellow",
+        
+        cage == "2B" & time.of.day == "1morning" ~ "yellow",
+        cage == "2B" & time.of.day == "2afternoon" ~ "purple",
+        
+        cage == "3A" & time.of.day == "1morning" ~ "yellow",
+        cage == "3A" & time.of.day == "2afternoon" ~ "purple",
+        
+        cage == "1B" & time.of.day == "1morning" ~ "purple",
+        cage == "1B" & time.of.day == "2afternoon" ~ "yellow",
+        
+        cage == "3B" & time.of.day == "1morning" ~ "yellow",
+        cage == "3B" & time.of.day == "2afternoon" ~ "purple"
+      )
+  )
+```
+
+
+```{r setting-colour-values, echo=FALSE}
+# This code uses tableau colour palettes to create a vector a hex code
+# colour values
+red <- "#C0392B"
+purple <- "#8E44AD"
+yellow <- "#F1C40F"
+orange <- "#DC7633"
+blue <- "#2980B9"
+pink <- "#F08080"
+```
+
+### Learning experiment data
+
+The learning data come from 'Heliconiini butterflies can learn
+time-dependent reward associations' which also has a GitHub repository called
+[`butterfly-learning`](https://wyatt-toure.github.io/butterfly-learning/). In
+that experiment I also looked at the species *Dryas iulia* but they were not
+assayed for this experiment so I filter the data down to only *Heliconius*
+species.
+
+```{r learning-data-prep}
+## Read in data
+learning_data <- read.csv("data/heliconiini-learning-data.csv")
+
+## Retrieve only Heliconius species by excluding Dryas
+learning_data <- learning_data %>% filter(species != "dryas")
+```
+
+#### Get actual colours of choices
+
+The choice data in this sheet are coded with regards to whether they are correct
+or incorrect as well as whether they are the 'colour rewarded in the morning' or
+'colour rewarded in the afternoon'. I needed to get the actual colours of the
+choices so I converted the choices based on what the correct reward colour was
+for the session using the `session.reward.colour` variable.
+
+```{r}
+# Converting training choices to their colour versions
+learning_data <- learning_data %>%
+  mutate(
+    n.purple.training =
+      case_when(
+        session.reward.colour == "purple" ~ n.correct.training,
+        TRUE ~ n.incorrect.training
+      )
+  ) %>%
+  mutate(
+    n.yellow.training =
+      case_when(
+        session.reward.colour == "yellow" ~ n.correct.training,
+        TRUE ~ n.incorrect.training
+      )
+  )
+```
+
+#### Stubborness index calculation 
+
+I created a stubbornness index which was created by the following formula
+
+ | correctness in afternoon - correctness in morning |
+
+This means that a butterfly that was stubborn will have stubbornness index
+closer to 1 and a flexible butterfly will have a stubbornness index closer to 0.
+
+```{r}
+# Creating proportional preference measure for learning test and training data
+learning_data <- learning_data %>%
+  mutate(
+    morning.colour.pref.prop =
+      n.morning.colour.test / (n.morning.colour.test + n.afternoon.colour.test)
+  ) %>%
+  mutate(
+    training.correctness.prop =
+      n.correct.training / (n.correct.training + n.incorrect.training)
+  )
+
+# Getting the shift in colour preference during testing in learning experiment
+learned_shift_in_colour_pref_data <- learning_data %>%
+  group_by(id) %>%
+  summarise(
+    shift.in.morning.colour.preference =
+      abs(last(morning.colour.pref.prop) - first(morning.colour.pref.prop))
+  )
+
+# Getting the shift in colour preference during training in learning experiment
+training_shift_in_colour_pref_data <- learning_data %>%
+  group_by(id) %>%
+  summarise(
+    training.stubborness.index =
+      abs(last(training.correctness.prop) - first(training.correctness.prop))
+  )
+```
+
+Finally we join the data sets
+
+```{r}
+full_data <-
+  left_join(exploration_data_summarised, learned_shift_in_colour_pref_data, 
+            by = "id") %>%
+  left_join(training_shift_in_colour_pref_data, 
+            by = "id")
+```
+
+***
+
+## Models
+
+Note for the time being I just have the raw model summary outputs. I will format
+the outputs when I have more time later on.
+
+### Model 1 - Are stubborn individuals less likely to sample a novel colour? {#model-1}
+
+The first model I tried is a simple model with just the proportional preference
+for a novel colour and the effect of the training stubbornness index. This model
+asks whether the proportion of novel colour choices is associated with how
+stubborn an individual was during training for the learning experiment.
+
+- Response variable: `cbind(n.novel.colour, n.familiar.colour)`
+- Fixed effect: `training.stubborness.index`
+- Random effect: `id`
+- Random effect: `cage`
+- Random effect: `combo`
+
+`id` is nested within `cage`.
+
+```{r}
+exploration_model <- glmer(
+  cbind(n.novel.colour, n.familiar.colour) ~ 
+    training.stubborness.index + (1 | cage / id) + (1 | combo),
+  data = full_data,
+  family = "binomial"
+)
+```
+
+```{r}
+summary(exploration_model)
+```
+
+
+What I find is that there is no significant effect though, the effect size is in
+the expected direction. There is a non-significant relationship between the
+proportion of novel colour choices and the training stubborness index whereby
+more stubborn individuals were less likely to sample a novel colour. We also see
+that there is more variation among individuals than among cages so individuals
+are not likely to be copying each other. 
+
+The largest amount of variation by far is in the `combo` random effect, which
+makes sense since there is variation in what colours butterflies were trained to
+and for what time periods. I will have to address this variation in subsequent
+models.
+
+### Model 2 - Were flexible individuals at test more likely to sample new colours? {#model-2}
+
+In this next model I ask whether the proportion of novel colour choices is influenced by how flexible an individual was during the final test for the learning experiment.
+
+```{r}
+exploration_model2 <- glmer(
+  cbind(n.novel.colour, n.familiar.colour) ~ 
+    shift.in.morning.colour.preference + (1 | cage / id) + (1 | combo),
+  data = full_data,
+  family = "binomial"
+)
+```
+
+```{r}
+summary(exploration_model2)
+```
+
+There is no significant effect. Looking at the direction of the effect reveals
+that individuals which did not shift their colour preference at test sampled
+less novel colours. This might be a consequence of learning the task more
+effectively. Perhaps they stuck with familiar colours because they were more
+responsive to training. However, we probably should not read too much into a
+non-significant result.
+
+### Model 3 - Does a stubborn individual stick with their favourite colour during exploration assays? {#model-3}
+
+Our stubborn individuals may have different colours as their favourite colour.
+To investigate whether this is maintained over exploratory behaviour assays I
+determined what the identity of the colour an individual made the vast majority
+of choices for was.
+
+```{r}
+# Get total number of purple and yellow choices
+total_training_choices <- learning_data %>%
+  group_by(id) %>%
+  summarise(across(c(n.purple.training, n.yellow.training), sum))
+
+# Determine which colour has more choices
+total_training_choices <- total_training_choices %>% 
+  mutate(
+    favourite.colour = case_when(
+      n.yellow.training > n.purple.training ~ "yellow",
+      n.purple.training > n.yellow.training ~ "purple"
+    )
+  )
+
+# Extract favourite colours and ids
+favourite_colour_matrix <- total_training_choices %>% 
+  select(id, favourite.colour)
+
+# Join data frames
+full_data <- left_join(full_data, favourite_colour_matrix,
+    by = "id"
+  )
+
+# Adding the identity of the familiar and novel colour as a variable
+full_data <- full_data %>% mutate(
+      familiar.colour =
+        case_when(
+          combo == "purple-blue" ~ 'purple',
+          combo == "yellow-blue" ~ 'yellow',
+          combo == "yellow-lblue" ~ 'yellow',
+          combo == "purple-orange" ~ 'purple',
+          combo == "purple-pink" ~ 'purple',
+          combo == "yellow-pink" ~ 'yellow',
+          combo == "purple-red" ~ 'purple',
+          combo == "yellow-red" ~ 'yellow',
+          combo == "yellow-orange" ~ 'yellow'
+        )) %>%
+    mutate(
+      novel.colour =
+        case_when(
+          combo == "purple-blue" ~ 'blue',
+          combo == "yellow-blue" ~ 'blue',
+          combo == "yellow-lblue" ~ 'lblue',
+          combo == "purple-pink" ~ 'pink',
+          combo == "yellow-pink" ~ 'pink',
+          combo == "purple-orange" ~ 'orange',
+          combo == "purple-red" ~ 'red',
+          combo == "yellow-red" ~ 'red',
+          combo == "yellow-orange" ~ 'orange'
+        ))
+```
+
+I asked whether the identity of the favourite colour and the identity of the
+familiar colour influences the proportion of novel colour choices an individual
+makes. Importantly this might vary with what colour was originally rewarding
+during the time of day the assay takes place so I have included
+`session.reward.colour` as a factor in the model.
+
+```{r}
+exploration_model3 <- glmer(
+  cbind(n.novel.colour, n.familiar.colour) ~ 
+    favourite.colour * familiar.colour * session.reward.colour + (1 | cage / id) + (1 | combo),
+  data = full_data,
+  control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)),
+  family = "binomial"
+)
+```
+
+```{r}
+summary(exploration_model3)
+```
+
+What we see is there 
+
+```{r fig.width=10, echo=FALSE, fig.cap="Proportion of novel colour choices for butterflies separated by the favourite colour of the individual and the identity of the familiar colour. Data are means ± SE"}
+# Getting estimated marginal means and confidence intervals
+exploration_model3_emmeans_data <- emmip(exploration_model3,
+  favourite.colour ~ familiar.colour,
+  CIs = TRUE,
+  plotit = FALSE,
+  type = "response"
+)
+
+# Drop_nas from favourite colour 
+plot_data <- full_data %>% 
+  filter(favourite.colour == "purple" | favourite.colour == "yellow")
+
+ggplot(exploration_model3_emmeans_data,
+         aes(
+           x = favourite.colour,
+           y = yvar,
+           color = familiar.colour
+         )
+  ) +
+  scale_color_manual(values = c(purple,yellow)) +
+    theme_cowplot() +
+    geom_jitter(data = plot_data,
+                aes(x = favourite.colour, 
+                    y = (plot_data$n.familiar.colour/(plot_data$n.novel.colour + plot_data$n.familiar.colour)),
+                    color = familiar.colour),
+                width = 0.05,
+                alpha = 0.2
+    ) +
+    geom_point(
+      shape = 15,
+      size = 3.5,
+      position = position_dodge(width = 0.1)
+    ) +
+  geom_errorbar(
+      aes(ymax = yvar+SE, 
+          ymin = yvar-SE), 
+      width = 0.05,
+      position = position_dodge(width = 0.1)
+    ) +
+  theme(
+    legend.position = "right",
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 14, face = "bold")
+  ) +
+  ylab("Familiar colour choice proportion")
+```
+
+```{r fig.width=10, echo=FALSE, fig.cap="This plot separates by session rewarding colour. Data are means ± SE"}
+# Getting estimated marginal means and confidence intervals
+exploration_model3_emmeans_data <- emmip(exploration_model3,
+  favourite.colour ~ familiar.colour:session.reward.colour,
+  CIs = TRUE,
+  plotit = FALSE,
+  type = "response"
+)
+
+# Drop_nas from favourite colour 
+plot_data <- full_data %>% 
+  filter(favourite.colour == "purple" | favourite.colour == "yellow")
+
+ggplot(exploration_model3_emmeans_data,
+         aes(
+           x = favourite.colour,
+           y = yvar,
+           color = familiar.colour
+         )
+  ) +
+  scale_color_manual(values = c(purple,yellow)) +
+    theme_cowplot() +
+    geom_jitter(data = plot_data,
+                aes(x = favourite.colour, 
+                    y = (plot_data$n.familiar.colour/(plot_data$n.novel.colour + plot_data$n.familiar.colour)),
+                    color = familiar.colour),
+                width = 0.05,
+                alpha = 0.2
+    ) +
+    geom_point(
+      shape = 15,
+      size = 3.5,
+      position = position_dodge(width = 0.1)
+    ) +
+  geom_errorbar(
+      aes(ymax = yvar+SE, 
+          ymin = yvar-SE), 
+      width = 0.05,
+      position = position_dodge(width = 0.1)
+    ) +
+  theme(
+    legend.position = "right",
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 14, face = "bold")
+  ) +
+  facet_wrap(~session.reward.colour) +
+  geom_hline(yintercept = 0.5, linetype = "dashed", alpha = 0.5) +
+  ylab("Familiar colour choice proportion")
+```
+
+
+***
+
+## Plot Graveyard
+
+Here I have plots of things I want to visualize, nothing final present here.
+
+
+
+```{r general-trend-plot, echo=FALSE, fig.width=10, fig.cap="Data are means ± SE."}
+# Colour values for plot 
+color.values <- c(blue, blue, orange, pink, purple, red, yellow)
+
+# Plot code
+ggplot(
+  expl_data_wide,
+  aes(
+    x = choice,
+    y = n,
+    color = choice
+  )
+) +
+  geom_jitter(alpha = 0.4, width = 0.05) +
+  scale_color_manual(values = color.values) +
+  theme_cowplot() +
+  theme(legend.position = "none") +
+  stat_summary(
+    geom = "point",
+    fun = "mean",
+    size = 3.5,
+    shape = 15
+  ) +
+  stat_summary(
+    geom = "errorbar",
+    fun.data = "mean_se",
+    position = position_dodge(width = 0),
+    width = 0.3
+  ) +
+  facet_grid(~combo,
+    scales = "free",
+    space = "free"
+  ) + 
+  ylab("Number of choices") +
+  xlab("Colour choice")
+```
+
