@@ -15,6 +15,10 @@ knit: (function(input, ...) {
   })
 ---
 
+<p class="author-name">M. Wyatt Toure</p>
+
+<p>e-mail: `wyatt.toure@gmail.com`<br></p>
+
 ***
 
 Project site summary placeholder.

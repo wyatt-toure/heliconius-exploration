@@ -1,7 +1,5 @@
 ---
-title: Heliconius exploration analysis
-author: M. Wyatt Toure
-date: "Last update on `r format(Sys.Date(), '%b %d %Y')`"
+title: Analysis for 'Does persistent colour preference constrain behavioural flexibility in Heliconius butterflies?'
 output:
   bookdown::html_document2:
     includes:
@@ -23,6 +21,10 @@ knit: (function(input, ...) {
   })
 ---
 
+<p class="author-name">M. Wyatt Toure</p>
+
+<p>e-mail: `wyatt.toure@gmail.com`<br></p>
+
 ```{r library-prep, include=FALSE}
 library(dplyr)
 library(tidyr)
@@ -42,6 +44,22 @@ source("R/tidy-learning-data.R")
 *** 
 
 ## Brief Overview
+
+This page details the analysis performed for 'untitled Heliconius exploration
+project'. I walk through all the data preparation steps and models here and
+explain my reasoning for analysis decisions. If you are only interested in the
+model outputs you can go straight to the [Models](#models) section. The code to
+reproduce this analysis are in the
+[analysis.Rmd](https://github.com/wyatt-toure/heliconius-exploration/blob/main/analysis.Rmd)
+file. The data underlying this analysis are available in the
+[`/data`](https://github.com/wyatt-toure/heliconius-exploration/blob/main/data)
+directory. Instructions on how to run the analyses as well as metadata for the
+variables can be found in
+[README.md](https://github.com/wyatt-toure/guppy-colour-learning-project#how-to-reproduce-the-results).
+
+***
+
+## Background
 
 One of the things I noticed while I was doing an experiment on Heliconiini
 time-based learning was that some individuals did not switch colours very much
@@ -85,11 +103,6 @@ For this experiment we wanted to understand the following:
 To get at this I gave butterflies exploration trials where familiar colours
 (yellow or purple) were paired with novel colours which the butterflies had
 never seen before.
-
-The code to reproduce this analysis are in the [analysis.Rmd](https://github.com/wyatt-toure/heliconius-exploration/blob/main/analysis.Rmd) file. 
-The data underlying this analysis are available in the [`/data`](https://github.com/wyatt-toure/heliconius-exploration/blob/main/data) directory.
-Instructions on how to run the analyses as well as metadata for the variables can 
-be found in [README.md](https://github.com/wyatt-toure/guppy-colour-learning-project#how-to-reproduce-the-results).
 
 ***
 
@@ -316,7 +329,7 @@ full_data <-
 
 ***
 
-## Models
+## Models {#models}
 
 Note for the time being I just have the raw model summary outputs. I will format
 the outputs when I have more time later on.

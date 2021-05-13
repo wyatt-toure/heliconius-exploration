@@ -7,6 +7,25 @@ h1, h2, h3, h4, h5 {
   font-weight: 600;
 }
 
+/*Title size */
+h1.title {
+    font-size: 28px;
+}
+
+/*Header sizes */
+
+h2 {
+    font-size: 25px;
+}
+
+h3 {
+    font-size: 20px;
+}
+
+h4.author {
+  font-weight: 500;
+}
+
 /* MAIN CONTAINER */
 /* moving main container down so navbar doesnt overlap */
 
@@ -44,6 +63,28 @@ body {
 .caption {
     color: rgba(0,0,0,0.70);
     font-size: 0.95em;
+}
+
+/*Author name */
+p.author-name {
+    font-size: 18px;
+    font-weight: 500;
+    text-align: left;
+}
+
+/* Affiliation number */
+.sidenote-number, .affil-mark {
+    position: relative;
+    vertical-align: super;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: normal;
+}
+
+/* Affiliation */
+p.author-affil {
+    font-weight: 450;
+    text-align: left;
 }
 
 /* Site footer */
