@@ -261,7 +261,7 @@ or incorrect as well as whether they are the 'colour rewarded in the morning' or
 choices so I converted the choices based on what the correct reward colour was
 for the session using the `session.reward.colour` variable.
 
-```{r}
+```{r getting-true-colour-choices}
 # Converting training choices to their colour versions
 learning_data <- learning_data %>%
   mutate(
@@ -366,7 +366,7 @@ summary(exploration_model)
 
 What I find is that there is no significant effect though, the effect size is in
 the expected direction. There is a non-significant relationship between the
-proportion of novel colour choices and the training stubborness index whereby
+proportion of novel colour choices and the training stubbornness index whereby
 more stubborn individuals were less likely to sample a novel colour. We also see
 that there is more variation among individuals than among cages so individuals
 are not likely to be copying each other. 
@@ -405,7 +405,14 @@ non-significant result.
 Our stubborn individuals may have different colours as their favourite colour.
 To investigate whether this is maintained over exploratory behaviour assays I
 determined what the identity of the colour an individual made the vast majority
-of choices for was.
+of choices for was. To determine what a butterfly's favourite colour was, I took
+the sum of all choices they had during the 10 day training period and assigned
+them as having either purple or yellow as their favourite colour.
+
+*Note*, this is probably a crude way of doing this for now during my exploratory
+investigations. I have plans to also make a metric that incorporates the
+magnitude of the preference *i.e.*, 51 purple 50 yellow and 100 purple 1 yellow
+shouldn't be seen as the same.
 
 ```{r}
 # Get total number of purple and yellow choices
@@ -477,60 +484,109 @@ exploration_model3 <- glmer(
 ```
 
 ```{r}
-summary(exploration_model3)
+broom::tidy(exploration_model3)
 ```
 
-What we see is there 
-
-```{r fig.width=10, echo=FALSE, fig.cap="Proportion of novel colour choices for butterflies separated by the favourite colour of the individual and the identity of the familiar colour. Data are means ± SE"}
-# Getting estimated marginal means and confidence intervals
-exploration_model3_emmeans_data <- emmip(exploration_model3,
-  favourite.colour ~ familiar.colour,
+```{r}
+emmip(exploration_model3,
+  favourite.colour ~ familiar.colour:session.reward.colour,
   CIs = TRUE,
   plotit = FALSE,
   type = "response"
-)
-
-# Drop_nas from favourite colour 
-plot_data <- full_data %>% 
-  filter(favourite.colour == "purple" | favourite.colour == "yellow")
-
-ggplot(exploration_model3_emmeans_data,
-         aes(
-           x = favourite.colour,
-           y = yvar,
-           color = familiar.colour
-         )
-  ) +
-  scale_color_manual(values = c(purple,yellow)) +
-    theme_cowplot() +
-    geom_jitter(data = plot_data,
-                aes(x = favourite.colour, 
-                    y = (plot_data$n.novel.colour/(plot_data$n.novel.colour + plot_data$n.familiar.colour)),
-                    color = familiar.colour),
-                width = 0.05,
-                alpha = 0.2
-    ) +
-    geom_point(
-      shape = 15,
-      size = 3.5,
-      position = position_dodge(width = 0.1)
-    ) +
-  geom_errorbar(
-      aes(ymax = yvar+SE, 
-          ymin = yvar-SE), 
-      width = 0.05,
-      position = position_dodge(width = 0.1)
-    ) +
-  theme(
-    legend.position = "right",
-    axis.text = element_text(size = 12),
-    axis.title = element_text(size = 14, face = "bold")
-  ) +
-  ylab("Novel colour choice proportion")
+) %>% select(-df, -tvar, -xvar) %>% kable()
 ```
 
-```{r fig.width=10, echo=FALSE, fig.cap="This plot separates by session rewarding colour. Data are means ± SE"}
+**Note** yvar is the proportional preference for novel colours so lower values
+mean more choices for the familiar colour and higher values mean more choices or
+the novel colour.
+
+For now I seem to be seeing the exact opposite of what I expected. You would
+expect that if purple is your favourite colour, purple is the familiar colour,
+and purple is the original session reward colour that a butterfly would make
+more familiar than novel object choices but we don't see this same with if you
+replace purple with all yellows.
+
+Glancing at the numbers seems to suggest that you see the most familiar choices
+when the session reward colour is opposite of their favourite colour and the
+familiar colour is the favourite colour. That is we see highest preferences or
+familiar colours when
+
+- favourite colour = yellow | familiar colour = yellow | session reward colour = purple
+- favourite colour = purple | familiar colour = purple | session reward colour = yellow
+
+One explanation could be that for those that have their favourite colour
+presented as the familiar colour in a session, it does not matter what the
+session rewarding colour, they go for the familiar colour regardless. Put
+another way, if I see my favourite colour is here (it is the familiar colour)
+then I don't care what the conditions are under—i'm going to make familiar
+colour choices.
+
+Still would need to explain why we see more novel choices when the familiar
+colour, favourite colour and session reward colour are all in agreement. Perhaps
+variation due to colour combinations?
+
+Something that is interesting is that when the familiar colour is yellow and the
+favourite colour is yellow and the session rewarding colour is yellow, the
+preference for novelty is lower than if the familiar colour is purple as your
+would expect. </br>
+However, when the familiar colour is purple and the favourite
+colour is purple and the session reward colour is purple, the preference for
+novelty is higher than if the familiar colour is yellow, which is opposite to
+what you would expect. 
+
+Will have to dig deeper into what colours are paired with what. Maybe purple is
+systematically paired with more attractive colours. Looking down at the plot in
+the plot graveyard, this might be the case.
+
+```{r fig.width=10, echo=FALSE, fig.cap="Proportion of novel colour choices for butterflies separated by the favourite colour of the individual and the identity of the familiar colour. Data are means ± SE"}
+# # Getting estimated marginal means and confidence intervals
+# exploration_model3_emmeans_data <- emmip(exploration_model3,
+#   favourite.colour ~ familiar.colour,
+#   CIs = TRUE,
+#   plotit = FALSE,
+#   type = "response"
+# )
+# 
+# # Drop_nas from favourite colour 
+# plot_data <- full_data %>% 
+#   filter(favourite.colour == "purple" | favourite.colour == "yellow")
+# 
+# ggplot(exploration_model3_emmeans_data,
+#          aes(
+#            x = favourite.colour,
+#            y = yvar,
+#            color = familiar.colour
+#          )
+#   ) +
+#   scale_color_manual(values = c(purple,yellow)) +
+#     theme_cowplot() +
+#     geom_jitter(data = plot_data,
+#                 aes(x = favourite.colour, 
+#                     y = (plot_data$n.novel.colour/(plot_data$n.novel.colour + plot_data$n.familiar.colour)),
+#                     color = familiar.colour),
+#                 width = 0.05,
+#                 alpha = 0.2
+#     ) +
+#     geom_point(
+#       shape = 15,
+#       size = 3.5,
+#       position = position_dodge(width = 0.1)
+#     ) +
+#   geom_errorbar(
+#       aes(ymax = yvar+SE, 
+#           ymin = yvar-SE), 
+#       width = 0.05,
+#       position = position_dodge(width = 0.1)
+#     ) +
+#   theme(
+#     legend.position = "right",
+#     axis.text = element_text(size = 12),
+#     axis.title = element_text(size = 14, face = "bold")
+#   ) +
+#   ylab("Novel colour choice proportion")
+```
+
+```{r fig.width=10, echo=FALSE, fig.cap="This plot separates the data into 2 panels by session rewarding colour. Data are means ± SE"}
 # Getting estimated marginal means and confidence intervals
 exploration_model3_emmeans_data <- emmip(exploration_model3,
   favourite.colour ~ familiar.colour:session.reward.colour,
@@ -579,6 +635,7 @@ ggplot(exploration_model3_emmeans_data,
   geom_hline(yintercept = 0.5, linetype = "dashed", alpha = 0.5) +
   ylab("Novel colour choice proportion")
 ```
+
 
 
 ***
