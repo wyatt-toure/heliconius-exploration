@@ -148,7 +148,7 @@ exploration_data$combo <- recode_factor(exploration_data$combo,
 #### Summarise raw counts
 
 I tabulated the raw data into their totals using a custom function
-`summarise_exploration_data()`. You can see the code for this function [here]().
+`summarise_exploration_data()`. You can see the code for this function [here](https://github.com/wyatt-toure/heliconius-exploration/blob/main/R/tidy-exploration-data.R).
 
 ```{r data-prep3}
 ## Applying summarise exploration data function
