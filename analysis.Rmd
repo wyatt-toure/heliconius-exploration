@@ -484,7 +484,7 @@ exploration_model3 <- glmer(
 ```
 
 ```{r}
-broom::tidy(exploration_model3)
+broom::tidy(exploration_model3) %>% kable()
 ```
 
 ```{r}
